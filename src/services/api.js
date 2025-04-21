@@ -12,7 +12,7 @@ export const api = axios.create({
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token')
-        if(token){
+        if (token) {
             config.headers['Authorization'] = `Bearer ${token}`
         }
         return config
@@ -23,14 +23,20 @@ api.interceptors.request.use(
 )
 
 api.interceptors.response.use(
-    (response) => {
-        return response
-    },
+    (response) => response,
     (error) => {
-        if(error.response && error.response.status === 401){
+        if (error.response && error.response.status === 401) {
+            const message = error.response.data?.error
             const authStore = useAuthStore()
-            authStore.handle404Error()
+
+            if (message === 'Token has expired' || message === 'Unauthorized') {
+                authStore.logout()
+                router.push({ path: '/login', query: { expired: true } })
+            } else {
+                authStore.handle404Error?.()
+            }
         }
+
         return Promise.reject(error)
     }
 )
