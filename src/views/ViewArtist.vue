@@ -1,6 +1,23 @@
 <template>
     <div>
-        <h2 class="text-2xl font-bold mb-6">Artists</h2>
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Artists</h2>
+            <div class="flex gap-2">
+                <button v-if="canUploadDownload" @click="downloadArtists"
+                    class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">
+                    Download Artists
+                </button>
+                <button v-if="canUploadDownload" @click="triggerUpload"
+                    class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    Upload Artists
+                </button>
+                <input ref="fileInputRef" type="file" accept=".csv" class="hidden" @change="uploadCSV" />
+            </div>
+        </div>
+
+        <!-- <div class="flex gap-2">
+
+        </div> -->
 
         <div class="overflow-x-auto">
             <table class="min-w-full bg-white shadow rounded-lg table-auto">
@@ -69,25 +86,34 @@
         <p v-if="artists.length === 0" class="text-gray-500 mt-4 text-center">
             No artists found.
         </p>
+
+        <pagination-component v-if="artists.length > 0" :current-page="pagination.currentPage"
+            :total-pages="pagination.totalPages" @page-change="handlePageChange" />
     </div>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 import { useAuthStore } from '@/stores/auth'
 import Swal from 'sweetalert2'
+import PaginationComponent from '@/components/PaginationComponent.vue'
+import { api } from '@/services/api'
 
 const userStore = useUserStore()
 const route = useRoute()
 const toast = useToast()
 const authStore = useAuthStore()
 const router = useRouter()
+const currentPage = ref(1)
 
 onMounted(async () => {
-    await userStore.fetchArtists()
+    const page = parseInt(route.query.page) || 1
+    currentPage.value = page
+
+    await userStore.fetchArtists(page)
 
     const successMessage = route.query.success
     if (successMessage) {
@@ -99,13 +125,33 @@ onMounted(async () => {
         })
     }
 
-    router.replace({ query: { ...route.query, success: undefined } })
+    router.replace({
+        query: {
+            ...route.query,
+            success: undefined,
+            page: page
+        }
+    })
 })
 
 const artists = computed(() => userStore.artists)
+const pagination = computed(() => userStore.pagination.artists)
+
+const handlePageChange = async (page) => {
+    currentPage.value = page
+    await userStore.fetchArtists(page)
+    router.replace({
+        query: {
+            ...route.query,
+            page: page
+        }
+    })
+    window.scrollTo(0, 0)
+}
 
 const editArtist = (user) => {
-    router.push({ name: 'EditUser', params: { id: user.id } })
+    const currentPage = route.query.page || 1
+    router.push({ name: 'EditUser', params: { id: user.id }, query: { page: currentPage } })
 }
 
 const goToSongs = (artistId) => {
@@ -125,11 +171,71 @@ const deleteArtist = async (id) => {
 
     if (result.isConfirmed) {
         await userStore.deleteUser(id)
-        await userStore.fetchArtists()
+        await userStore.fetchArtists(currentPage.value)
         toast.success('User deleted successfully', { position: 'top-right' })
     }
 }
+
+const downloadArtists = async () => {
+    if (!canUploadDownload.value) {
+        toast.error('Access denied')
+        return
+    }
+
+    try {
+        const response = await api.get('/artists/download', {
+            responseType: 'blob'
+        })
+
+        const blob = new Blob([response.data], { type: 'text/csv' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'artists.csv'
+        a.click()
+        URL.revokeObjectURL(url)
+    } catch (err) {
+        toast.error('Download failed')
+        console.error(err)
+    }
+}
+
+const fileInputRef = ref(null)
+
+const triggerUpload = () => {
+    if (!canUploadDownload.value) {
+        toast.error('Access denied')
+        return
+    }
+    fileInputRef.value.click()
+}
+
+const uploadCSV = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+        await api.post('/artists/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+
+        toast.success('Upload successful')
+        await userStore.fetchArtists(currentPage.value)
+    } catch (err) {
+        toast.error('Upload failed')
+        console.error(err)
+    }
+}
+
+const canUploadDownload = computed(() => {
+    const role = authStore.user?.role
+    return role === 'super_admin' || role === 'artist_manager'
+})
 </script>
+
 
 <style scoped>
 .table-auto {

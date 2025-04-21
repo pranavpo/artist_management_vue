@@ -118,7 +118,6 @@ onMounted(async () => {
     try {
         const response = await api.get(`/users/${userId}`)
         user.value = response.data
-        console.log(user)
         form.value = {
             first_name: user.value.user.first_name,
             last_name: user.value.user.last_name,
@@ -145,11 +144,14 @@ const updateUser = async () => {
             delete payload.first_released_year
             delete payload.number_of_albums_released
         }
-
+        const currentPage = route.query.page || 1
         await api.put(`/users/${userId}`, payload)
         router.push({
             path: form.value.role === 'artist' ? '/view-artists' : '/view-artist-managers',
-            query: { success: `${form.value.role.replace('_', ' ')} updated successfully!` }
+            query: { 
+                success: `${form.value.role.replace('_', ' ')} updated successfully!`,
+                page: currentPage
+            }
         })
     } catch (err) {
         let errorMessages = [];
