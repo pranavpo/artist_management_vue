@@ -15,7 +15,8 @@ export const useAuthStore = defineStore('auth', {
         userRole: (state) => state.user?.role || null,
         isSuperAdmin: (state) => state.user?.role === 'super_admin',
         isArtistManager: (state) => state.user?.role === 'artist_manager',
-        isArtist: (state) => state.user?.role === "artist"
+        isArtist: (state) => state.user?.role === "artist",
+        artistId: (state) => state.user?.artist?.id || null // Add this getter
     },
 
     actions: {
@@ -26,7 +27,6 @@ export const useAuthStore = defineStore('auth', {
             try {
                 const response = await authService.login(credentials)
                 this.token = response.token
-                console.log(this.token)
                 localStorage.setItem('token', response.token)
                 await this.fetchCurrentUser()
 
@@ -46,11 +46,10 @@ export const useAuthStore = defineStore('auth', {
         async fetchCurrentUser() {
             console.log("Fetching current user")
             try {
-                if (!this.token){
+                if (!this.token) {
                     this.user = null
                     this.token = null
                     localStorage.removeItem('token')
-                    // router.push('/')
                     return
                 }
 
@@ -71,13 +70,31 @@ export const useAuthStore = defineStore('auth', {
             this.user = null
             this.token = null
             localStorage.removeItem('token')
-            if(redirect){
+            if (redirect) {
                 router.push('/')
             }
         },
 
         handle404Error() {
             this.logout()
+        },
+
+        async register(userData) {
+            this.loading = true
+            this.error = null
+
+            try {
+                await authService.register(userData)
+                router.push({
+                    path: '/login',
+                    query: { success: 'Registration successful! Please log in.' }
+                })
+            } catch (error) {
+                this.error = error.response?.data?.error || 'Registration failed'
+                throw error
+            } finally {
+                this.loading = false
+            }
         }
     }
 })

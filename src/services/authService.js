@@ -16,5 +16,15 @@ export const authService = {
             throw error
         }
         
+    },
+
+    async register(userData) {
+        try {
+            const response = await api.post('/register-artist', userData)
+            return response.data
+        } catch (error) {
+            console.error("Error in register: ", error)
+            throw error
+        }
     }
 }

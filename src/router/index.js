@@ -10,6 +10,7 @@ import EditUser from '../views/EditUser.vue'
 import Dashboard from '../views/Dashboard.vue'
 import ViewSongs from '../views/ViewSongs.vue'
 import EditSong from '../views/EditSong.vue'
+import RegisterArtist from '../views/RegisterArtist.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,9 +21,14 @@ const router = createRouter({
       component: Login
     },
     {
+      path: '/register-artist',
+      name: 'RegisterArtist',
+      component: RegisterArtist
+    },
+    {
       path: '/dashboard',
       component: Dashboard,
-      meta: {requiresAuth: true},
+      meta: { requiresAuth: true },
       redirect: to => {
         const authStore = useAuthStore()
         // Redirect based on role
@@ -35,43 +41,43 @@ const router = createRouter({
           path: '/create-user',
           name: 'CreateUser',
           component: CreateUser,
-          meta: {requiresAuth: true, roles: ['super_admin','artist_manager']}
+          meta: { requiresAuth: true, roles: ['super_admin', 'artist_manager'] }
         },
         {
           path: '/view-artist-managers',
           name: 'ViewArtistManagers',
           component: ViewArtistManager,
-          meta: {requiresAuth:true, roles:['super_admin']}
+          meta: { requiresAuth: true, roles: ['super_admin'] }
         },
         {
           path: '/view-artists',
           name: 'ViewArtists',
           component: ViewArtist,
-          meta: {requiresAuth:true, roles:['super_admin','artist_manager']}
+          meta: { requiresAuth: true, roles: ['super_admin', 'artist_manager'] }
         },
         {
           path: '/edit-user/:id',
           name: 'EditUser',
           component: EditUser,
-          meta: {requiresAuth:true, roles: ['super_admin','artist_manager']}
+          meta: { requiresAuth: true, roles: ['super_admin', 'artist_manager'] }
         },
         {
           path: '/create-song',
           name: 'CreateSong',
           component: CreateSong,
-          meta: {requiresAuth:true, roles:['artist']}
+          meta: { requiresAuth: true, roles: ['artist'] }
         },
         {
           path: '/artists/:id/view-songs',
           name: 'ViewSongs',
           component: ViewSongs,
-          meta: {requiresAuth:true, roles:['super_admin','artist_manager','artist']}
+          meta: { requiresAuth: true, roles: ['super_admin', 'artist_manager', 'artist'] }
         },
         {
           path: '/edit-song/:id',
           name: 'EditSong',
           component: EditSong,
-          meta: {requiresAuth: true, roles: ['artist']}
+          meta: { requiresAuth: true, roles: ['artist'] }
         }
       ]
     }

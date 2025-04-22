@@ -1,8 +1,15 @@
 <template>
     <div>
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold">Artists</h2>
-            <div class="flex gap-2">
+        <div class="flex justify-between items-center mb-6 w-full">
+
+            <h2 class="text-2xl font-bold whitespace-nowrap">Artists</h2>
+
+            <div v-if="isUploading"
+                class="text-gray-700 text-sm font-medium text-center w-full absolute left-1/2 transform -translate-x-1/2">
+                File is being uploaded...
+            </div>
+
+            <div class="flex gap-2 ml-auto">
                 <button v-if="canUploadDownload" @click="downloadArtists"
                     class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">
                     Download Artists
@@ -74,7 +81,7 @@
                                 Delete
                             </button>
                             <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                                @click="artist.user && goToSongs(artist.user.id)">
+                                @click="artist.user && goToSongs(artist.id)">
                                 Songs
                             </button>
                         </td>
@@ -201,6 +208,7 @@ const downloadArtists = async () => {
 }
 
 const fileInputRef = ref(null)
+const isUploading = ref(false)
 
 const triggerUpload = () => {
     if (!canUploadDownload.value) {
@@ -217,16 +225,26 @@ const uploadCSV = async (event) => {
     const formData = new FormData()
     formData.append('file', file)
 
+    isUploading.value = true
+
     try {
-        await api.post('/artists/upload', formData, {
+        const response = await api.post('/artists/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         })
-
-        toast.success('Upload successful')
+        const message = response.data.message || 'Upload successful'
+        toast.open({
+            message: message,
+            type: 'success',
+            duration: 3000,
+            position: 'top-right',
+        })
         await userStore.fetchArtists(currentPage.value)
     } catch (err) {
-        toast.error('Upload failed')
+        const errorMsg = err.response?.data?.error || 'Upload failed'
+        toast.error(errorMsg)
         console.error(err)
+    } finally {
+        isUploading.value = false
     }
 }
 

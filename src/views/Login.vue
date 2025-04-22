@@ -28,18 +28,48 @@
                     {{ authStore.error }}
                 </p>
             </form>
+
+            <p class="text-sm text-center mt-4">
+                Don't have an account?
+                <router-link to="/register-artist" class="text-blue-600 hover:underline">
+                    Register as Artist
+                </router-link>
+            </p>
         </div>
     </div>
 </template>
 
+
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useRoute, useRouter } from 'vue-router'
+import { useToast } from 'vue-toast-notification'
 
 const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
+const route = useRoute()
+const router = useRouter()
+const toast = useToast()
 // console.log(email)
+
+onMounted(() => {
+    const successMessage = route.query.success
+    if (successMessage) {
+        toast.open({
+            message: successMessage,
+            type: 'success',
+            duration: 3000,
+            position: 'top-right',
+        })
+    }
+    router.replace({ 
+        query: { 
+            success: undefined,
+        } 
+    })
+})
 
 const handleLogin = async () => {
     await authStore.login({

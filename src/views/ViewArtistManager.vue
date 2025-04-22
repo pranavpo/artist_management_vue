@@ -125,3 +125,22 @@ const deleteUser = async (id) => {
     }
 }
 </script>
+
+<style scoped>
+.table-auto {
+    table-layout: auto;
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    table {
+        font-size: 0.875rem;
+    }
+
+    th,
+    td {
+        padding: 8px;
+    }
+}
+</style>
